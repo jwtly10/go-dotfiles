@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	FilePermReadWriteUser = 0644
+	FilePermReadWriteUser   = 0644
+	FilePermReadWriteExUser = 0755
 )
 
 type Dotfiles struct {

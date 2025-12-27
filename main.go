@@ -21,9 +21,47 @@ var initCmd = &cobra.Command{
 	RunE:  runInit,
 }
 
+var syncCmd = &cobra.Command{
+	Use:   "sync",
+	Short: "Sync dotfiles to home directory",
+	RunE:  runSync,
+}
+
 func init() {
 	initCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Log file operations instead of executing them")
+	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Log file operations instead of executing them")
+
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(syncCmd)
+}
+
+func runSync(cmd *cobra.Command, args []string) error {
+	df, err := New()
+	if err != nil {
+		return err
+	}
+
+	if !df.isInitialised() {
+		return fmt.Errorf("dotfiles not initialized (run 'dotfiles init' first)")
+	}
+
+	df.DryRun = dryRun
+
+	linker, err := NewLinker(df)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Syncing dotfiles...")
+	if err := linker.Sync(); err != nil {
+		return err
+	}
+
+	if !dryRun {
+		fmt.Println("\n✓ Sync complete!")
+	}
+
+	return nil
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
