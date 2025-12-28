@@ -106,9 +106,12 @@ func (l *Linker) createSymlink(source, target string) error {
 }
 
 func (l *Linker) shouldIgnore(relPath string) bool {
+	// Ignore some of the system generated files when linking
+	if relPath == ".git" || relPath == ".gitignore" || relPath == "dotfiles.yaml" || relPath == "migrate.yaml" {
+		return true
+	}
+
 	ignoreList := l.config.Ignore
-	// Some additional paths we want to always ensure are ignored even if not explicitly requested
-	ignoreList = append(ignoreList, ".git", ".gitignore", "dotfiles.yaml", "migrate.yaml")
 	return shouldIgnore(ignoreList, relPath)
 }
 
