@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -137,7 +138,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Println("  1. Edit", df.Dir+"/migrate.yaml", "with your files")
 	fmt.Println("  2. dotfiles migrate")
 	fmt.Println("  3. cd", df.Dir)
-	fmt.Println("  4. git init && git add . && git commit -m 'Initial dotfiles'")
+	if _, err := exec.LookPath("git"); err == nil {
+		fmt.Println("  4. git add . && git commit -m 'Initial dotfiles'")
+	} else {
+		fmt.Println("  4. git init && git add . && git commit -m 'Initial dotfiles'")
+	}
 
 	return nil
 }
