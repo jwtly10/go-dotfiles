@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -27,12 +28,20 @@ var syncCmd = &cobra.Command{
 	RunE:  runSync,
 }
 
+var migrateCmd = &cobra.Command{
+	Use:   "migrate",
+	Short: "Migrate existing dotfiles to ~/.dotfiles",
+	RunE:  runMigration,
+}
+
 func init() {
 	initCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Log file operations instead of executing them")
 	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Log file operations instead of executing them")
+	migrateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Log file operations instead of executing them")
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(migrateCmd)
 }
 
 func runSync(cmd *cobra.Command, args []string) error {
@@ -47,6 +56,12 @@ func runSync(cmd *cobra.Command, args []string) error {
 
 	df.DryRun = dryRun
 
+	if !dryRun {
+		if !confirmAction("This will SYNC your dotfiles (NOT a dry run). Continue?") {
+			return nil
+		}
+	}
+
 	linker, err := NewLinker(df)
 	if err != nil {
 		return err
@@ -58,7 +73,42 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	if !dryRun {
-		fmt.Println("\n✓ Sync complete!")
+		fmt.Println("\n✅ Sync complete!")
+	}
+
+	return nil
+}
+
+func runMigration(cmd *cobra.Command, args []string) error {
+	df, err := New()
+	if err != nil {
+		return err
+	}
+
+	if !df.isInitialised() {
+		return fmt.Errorf("dotfiles not initialized (run 'dotfiles init' first)")
+	}
+
+	df.DryRun = dryRun
+
+	if !dryRun {
+		if !confirmAction("This will MIGRATE your dotfiles (NOT a dry run). Continue?") {
+			return nil
+		}
+	}
+
+	migrator, err := NewMigrator(df)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Migrating declared config files to ~/.dotfiles ...")
+	if err := migrator.Migrate(); err != nil {
+		return err
+	}
+
+	if !dryRun {
+		fmt.Println("\n✅ Migration complete!")
 	}
 
 	return nil
@@ -77,10 +127,10 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("✓ Created", df.Dir)
-	fmt.Println("✓ Created dotfiles.yaml")
-	fmt.Println("✓ Created migrate.yaml")
-	fmt.Println("✓ Created .gitignore")
+	fmt.Println("✅ Created", df.Dir)
+	fmt.Println("✅ Created dotfiles.yaml")
+	fmt.Println("✅ Created migrate.yaml")
+	fmt.Println("✅ Created .gitignore")
 	fmt.Println()
 	fmt.Println("Next steps:")
 	fmt.Println("  1. Edit", df.Dir+"/migrate.yaml", "with your files")
@@ -96,6 +146,17 @@ func Execute() {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func confirmAction(message string) bool {
+	fmt.Printf("%s [y/N]: ", message)
+	var response string
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		return false
+	}
+	response = strings.ToLower(strings.TrimSpace(response))
+	return response == "y" || response == "yes"
 }
 
 func main() {

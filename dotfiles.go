@@ -74,6 +74,11 @@ func (d *Dotfiles) HomePath(relativePath string) string {
 	return filepath.Join(d.HomeDir, relativePath)
 }
 
+// DotPath returns the absolute path in dotfiles dir
+func (d *Dotfiles) DotPath(relativePath string) string {
+	return filepath.Join(d.Dir, relativePath)
+}
+
 func defaultGitignore() string {
 	return fmt.Sprintf(`# go-dotfiles manager files
 %s

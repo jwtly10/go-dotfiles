@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -43,9 +44,25 @@ func LoadDotfilesConfig(dotfilesDir string) (*DotfilesConfig, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return DefaultDotfilesConfig(), nil
 	}
+
 	var config DotfilesConfig
 	err := marshal(path, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validatePatterns(config.Ignore)
+
 	return &config, err
+}
+
+func validatePatterns(patterns []string) error {
+	for _, pattern := range patterns {
+		if _, err := filepath.Match(pattern, "test"); err != nil {
+			return fmt.Errorf("invalid ignore pattern %q: %w", pattern, err)
+		}
+	}
+	return nil
 }
 
 func (c *DotfilesConfig) Save(dotfilesDir string) error {
@@ -64,6 +81,11 @@ func LoadMigrationConfig(dotfilesDir string) (*MigrateConfig, error) {
 	}
 	var config MigrateConfig
 	err := marshal(path, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validatePatterns(config.Ignore)
 	return &config, err
 }
 

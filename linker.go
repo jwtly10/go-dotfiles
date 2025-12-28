@@ -42,10 +42,11 @@ func (l *Linker) Sync() error {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
+			fmt.Printf("⏭️ Skipping ignored file: %s\n", relPath)
 			return nil
 		}
 
-		targetPath := filepath.Join(l.dotfiles.HomeDir, relPath)
+		targetPath := l.dotfiles.HomePath(relPath)
 
 		return l.createSymlink(path, targetPath)
 	})
@@ -105,21 +106,10 @@ func (l *Linker) createSymlink(source, target string) error {
 }
 
 func (l *Linker) shouldIgnore(relPath string) bool {
-	base := filepath.Base(relPath)
-
 	ignoreList := l.config.Ignore
 	// Some additional paths we want to always ensure are ignored even if not explicitly requested
 	ignoreList = append(ignoreList, ".git", ".gitignore", "dotfiles.yaml", "migrate.yaml")
-
-	for _, pattern := range ignoreList {
-		if matched, _ := filepath.Match(pattern, relPath); matched {
-			return true
-		}
-		if matched, _ := filepath.Match(pattern, base); matched {
-			return true
-		}
-	}
-	return false
+	return shouldIgnore(ignoreList, relPath)
 }
 
 func (l *Linker) handleConflict(source, target, reason string) error {
