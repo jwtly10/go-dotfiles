@@ -107,7 +107,7 @@ func (l *Linker) createSymlink(source, target string) error {
 
 func (l *Linker) shouldIgnore(relPath string) bool {
 	// Ignore some of the system generated files when linking
-	if relPath == ".git" || relPath == ".gitignore" || relPath == "dotfiles.yaml" || relPath == "migrate.yaml" {
+	if relPath == ".git" || relPath == ".gitignore" || relPath == "dotfiles.yaml" || relPath == "migrate.yaml" || relPath == "README.md" {
 		return true
 	}
 

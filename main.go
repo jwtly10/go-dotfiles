@@ -131,6 +131,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Println("✅ Created dotfiles.yaml")
 	fmt.Println("✅ Created migrate.yaml")
 	fmt.Println("✅ Created .gitignore")
+	fmt.Println("✅ Created README.md")
 	fmt.Println()
 	fmt.Println("Next steps:")
 	fmt.Println("  1. Edit", df.Dir+"/migrate.yaml", "with your files")

@@ -1,10 +1,14 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
 )
+
+//go:embed templates/README.md
+var readmeTemplate []byte
 
 const (
 	FilePermReadWriteUser   = 0644
@@ -44,6 +48,7 @@ func (d *Dotfiles) Init() error {
 		fmt.Println("[DRY RUN] Would create file:", filepath.Join(d.Dir, ConfigFile))
 		fmt.Println("[DRY RUN] Would create file:", filepath.Join(d.Dir, MigrationFile))
 		fmt.Println("[DRY RUN] Would create file:", filepath.Join(d.Dir, ".gitignore"))
+		fmt.Println("[DRY RUN] Would create file:", filepath.Join(d.Dir, "README.md"))
 		return nil
 	}
 
@@ -64,6 +69,11 @@ func (d *Dotfiles) Init() error {
 	gitIgnoreFile := filepath.Join(d.Dir, ".gitignore")
 	if err := os.WriteFile(gitIgnoreFile, []byte(defaultGitignore()), FilePermReadWriteUser); err != nil {
 		return fmt.Errorf("failed to create .gitignore: %w", err)
+	}
+
+	readmeFile := filepath.Join(d.Dir, "README.md")
+	if err := os.WriteFile(readmeFile, readmeTemplate, FilePermReadWriteUser); err != nil {
+		return fmt.Errorf("failed to create README.md: %w", err)
 	}
 
 	return nil
