@@ -19,6 +19,7 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(syncCmd)
 	rootCmd.AddCommand(migrateCmd)
+	rootCmd.AddCommand(versionCmd)
 }
 
 func Execute() {
