@@ -148,6 +148,16 @@ func (m *Migrator) Migrate() error {
 
 // migrateFile moves a single file from source to target
 func (m *Migrator) migrateFile(absSource, absTarget string) error {
+	// Safety check: warn about critical files
+	if IsCriticalFile(absSource) {
+		fmt.Printf("⚠️  WARNING: Migrating critical system file: %s\n", absSource)
+	}
+
+	// Safety check: validate path
+	if err := CheckPathSafety(absSource); err != nil {
+		return fmt.Errorf("safety check failed for %s: %w", absSource, err)
+	}
+
 	if s, err := os.Lstat(absSource); err == nil {
 		if s.IsDir() {
 			return m.handleConflict(absSource, absTarget, "can't migrate a directory")
@@ -182,8 +192,20 @@ func (m *Migrator) migrateFile(absSource, absTarget string) error {
 
 	if m.dotfiles.DryRun {
 		fmt.Printf("[DRY RUN] Would migrate %s -> %s\n", absSource, absTarget)
+		if IsCriticalFile(absSource) {
+			fmt.Printf("[DRY RUN] ⚠️  This is a critical system file - ensure you have backups!\n")
+		}
 		m.migrated++
 		return nil
+	}
+
+	// Safety: Create backup for critical files before migration
+	if IsCriticalFile(absSource) {
+		backupPath, err := BackupFile(absSource)
+		if err != nil {
+			return fmt.Errorf("failed to create backup of critical file %s: %w", absSource, err)
+		}
+		fmt.Printf("📦 Created backup: %s\n", backupPath)
 	}
 
 	targetDir := filepath.Dir(absTarget)
@@ -202,8 +224,24 @@ func (m *Migrator) migrateFile(absSource, absTarget string) error {
 }
 
 func (m *Migrator) handleConflict(source, target, reason string) error {
-	// TODO: Let the user decide what to do here
-	return fmt.Errorf("failed to migrate %s -> %s: %s", source, target, reason)
+	// Provide detailed error message with suggestions
+	errMsg := fmt.Sprintf("failed to migrate %s -> %s: %s", source, target, reason)
+	
+	// Add helpful suggestions
+	if IsCriticalFile(source) {
+		errMsg += fmt.Sprintf("\n\n⚠️  SAFETY: %s is a critical system file.", source)
+		errMsg += "\n   Suggestions:"
+		errMsg += "\n   1. Ensure you have a backup of this file"
+		errMsg += "\n   2. Review the file contents before migration"
+		errMsg += "\n   3. Use '--dry-run' first to preview changes"
+	} else {
+		errMsg += "\n\n   Suggestions:"
+		errMsg += "\n   1. Check if the file should be migrated"
+		errMsg += "\n   2. Remove or rename conflicting files if safe"
+		errMsg += "\n   3. Use '--dry-run' first to preview changes"
+	}
+	
+	return fmt.Errorf("%s", errMsg)
 }
 
 func (m *Migrator) shouldIgnore(relPath string) bool {

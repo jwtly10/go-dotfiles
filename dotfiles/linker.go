@@ -63,6 +63,11 @@ func (l *Linker) createSymlink(source, target string) error {
 		return nil
 	}
 
+	// Safety check: warn about critical files
+	if IsCriticalFile(target) {
+		fmt.Printf("⚠️  WARNING: %s is a critical system file. Proceed with caution.\n", target)
+	}
+
 	targetInfo, err := os.Lstat(target)
 	if err == nil { // Target already exists
 		if targetInfo.Mode()&os.ModeSymlink != 0 {
@@ -78,6 +83,12 @@ func (l *Linker) createSymlink(source, target string) error {
 				return nil
 			}
 			return l.handleConflict(source, target, "symlink exists to different location")
+		}
+
+		// Safety: for critical files, provide more context
+		if IsCriticalFile(target) {
+			fmt.Printf("⚠️  CRITICAL: %s exists and is not a symlink. This is a critical system file.\n", target)
+			fmt.Printf("   Consider backing up before proceeding: dotfiles will need to replace this file.\n")
 		}
 
 		if l.dotfiles.DryRun {
@@ -116,6 +127,22 @@ func (l *Linker) shouldIgnore(relPath string) bool {
 }
 
 func (l *Linker) handleConflict(source, target, reason string) error {
-	// TODO: Let the user decide what to do here
-	return fmt.Errorf("failed to link %s -> %s: %s", target, source, reason)
+	// Provide detailed error message with suggestions
+	errMsg := fmt.Sprintf("failed to link %s -> %s: %s", target, source, reason)
+	
+	// Add helpful suggestions
+	if IsCriticalFile(target) {
+		errMsg += fmt.Sprintf("\n\n⚠️  SAFETY: %s is a critical system file.", target)
+		errMsg += "\n   Suggestions:"
+		errMsg += "\n   1. Backup the file manually before proceeding"
+		errMsg += "\n   2. Review the file contents to ensure nothing important will be lost"
+		errMsg += "\n   3. Consider using '--dry-run' first to preview changes"
+	} else {
+		errMsg += "\n\n   Suggestions:"
+		errMsg += "\n   1. Backup or rename the existing file"
+		errMsg += "\n   2. Remove the file if it's safe to do so"
+		errMsg += "\n   3. Use '--dry-run' first to preview changes"
+	}
+	
+	return fmt.Errorf("%s", errMsg)
 }

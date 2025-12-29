@@ -44,6 +44,21 @@ func (d *Dotfiles) Init() error {
 		return fmt.Errorf("dotfiles already initialised in %s", d.Dir)
 	}
 
+	// Safety check: if .dotfiles exists, check if it's a file (not directory) or has existing content
+	if info, err := os.Stat(d.Dir); err == nil {
+		if !info.IsDir() {
+			return fmt.Errorf("safety check failed: %s exists but is not a directory (it's a file). Please remove it first", d.Dir)
+		}
+		// Directory exists but not initialized - check if it has content
+		entries, err := os.ReadDir(d.Dir)
+		if err != nil {
+			return fmt.Errorf("failed to read existing directory %s: %w", d.Dir, err)
+		}
+		if len(entries) > 0 {
+			return fmt.Errorf("safety check failed: %s already exists and contains %d item(s). This may be an existing dotfiles directory. If you want to reinitialize, please remove it first or ensure it's empty", d.Dir, len(entries))
+		}
+	}
+
 	if d.DryRun {
 		fmt.Println("[DRY RUN] Would create directory:", d.Dir)
 		fmt.Println("[DRY RUN] Would create file:", filepath.Join(d.Dir, ConfigFile))
