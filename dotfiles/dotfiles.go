@@ -1,4 +1,4 @@
-package main
+package dotfiles
 
 import (
 	_ "embed"
@@ -32,15 +32,15 @@ func New() (*Dotfiles, error) {
 	return &Dotfiles{Dir: dir, HomeDir: home}, nil
 }
 
-// isInitialised checks if dir exists, and has a valid dotfiles.yaml marker
-func (d *Dotfiles) isInitialised() bool {
+// IsInitialised checks if dir exists, and has a valid dotfiles.yaml marker
+func (d *Dotfiles) IsInitialised() bool {
 	markerPath := filepath.Join(d.Dir, ConfigFile)
 	_, err := os.Stat(markerPath)
 	return err == nil
 }
 
 func (d *Dotfiles) Init() error {
-	if d.isInitialised() {
+	if d.IsInitialised() {
 		return fmt.Errorf("dotfiles already initialised in %s", d.Dir)
 	}
 
