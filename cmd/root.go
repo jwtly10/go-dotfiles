@@ -10,7 +10,7 @@ import (
 var dryRun bool
 
 var rootCmd = &cobra.Command{
-	Use:   "dotfiles",
+	Use:   "go-dotfiles",
 	Short: "Dotfiles Manager",
 	Long:  `A lightweight tool to manage your dotfiles using symlinks`,
 }
