@@ -26,9 +26,9 @@ type Migrator struct {
 	dotfiles *Dotfiles
 	config   *MigrateConfig
 
-	migrated int
-	existing int
-	errors   []string
+	migratedFiles []string
+	existing      int
+	errors        []string
 }
 
 func NewMigrator(dotfiles *Dotfiles) (*Migrator, error) {
@@ -49,12 +49,12 @@ func (m *Migrator) Migrate() error {
 	fmt.Printf("Attempting to migrate %d paths\n", len(m.config.Paths))
 	for _, path := range m.config.Paths {
 		if m.dotfiles.DryRun {
-			if m.migrated >= DryRunMaxMigrations {
+			if len(m.migratedFiles) >= DryRunMaxMigrations {
 				fmt.Printf("Reached dry run migration limit of %d files.\n", DryRunMaxMigrations)
 				break
 			}
 		} else {
-			if m.migrated >= MaxMigrations {
+			if len(m.migratedFiles) >= MaxMigrations {
 				fmt.Printf("Reached migration limit of %d files. Run again to migrate more.\n", MaxMigrations)
 				break
 			}
@@ -84,12 +84,12 @@ func (m *Migrator) Migrate() error {
 				}
 
 				if m.dotfiles.DryRun {
-					if m.migrated >= DryRunMaxMigrations {
+					if len(m.migratedFiles) >= DryRunMaxMigrations {
 						fmt.Printf("Reached dry run migration limit of %d files.\n", DryRunMaxMigrations)
 						return filepath.SkipAll
 					}
 				} else {
-					if m.migrated >= MaxMigrations {
+					if len(m.migratedFiles) >= MaxMigrations {
 						fmt.Printf("Reached migration limit of %d files. Run again to migrate more.\n", MaxMigrations)
 						return filepath.SkipAll
 					}
@@ -128,17 +128,22 @@ func (m *Migrator) Migrate() error {
 
 	if m.dotfiles.DryRun {
 		fmt.Printf("\n[DRY RUN SUMMARY]\n")
-		fmt.Printf("Checked %d files for migration.\n", m.migrated)
-		if m.migrated > MaxMigrations {
+		fmt.Printf("Checked %d files for migration.\n", len(m.migratedFiles))
+		if len(m.migratedFiles) > MaxMigrations {
 			fmt.Printf("NOTICE: On an actual migration, only the first %d files would be moved (MaxMigrations limit).\n", MaxMigrations)
-			fmt.Printf("You would need to run the command multiple times to migrate all %d files.\n", m.migrated)
+			fmt.Printf("You would need to run the command multiple times to migrate all %d files.\n", len(m.migratedFiles))
 		} else {
-			fmt.Printf("On an actual migration, %d files would be moved.\n", m.migrated)
+			fmt.Printf("On an actual migration, %d files would be moved.\n", len(m.migratedFiles))
 		}
 		fmt.Println()
 	}
 
-	fmt.Printf("Migration complete: %d files migrated, %d files already migrated, %d file errors\n", m.migrated, m.existing, len(m.errors))
+	fmt.Printf("Migration complete: %d files migrated, %d files already migrated, %d file errors\n", len(m.migratedFiles), m.existing, len(m.errors))
+	fmt.Println("Migrated files:")
+	for _, f := range m.migratedFiles {
+		fmt.Printf(" - %s\n", f)
+	}
+
 	if len(m.errors) > 0 {
 		return fmt.Errorf("errors:\n%s", strings.Join(m.errors, "\n"))
 	}
@@ -182,7 +187,7 @@ func (m *Migrator) migrateFile(absSource, absTarget string) error {
 
 	if m.dotfiles.DryRun {
 		fmt.Printf("[DRY RUN] Would migrate %s -> %s\n", absSource, absTarget)
-		m.migrated++
+		m.migratedFiles = append(m.migratedFiles, absSource)
 		return nil
 	}
 
@@ -197,7 +202,7 @@ func (m *Migrator) migrateFile(absSource, absTarget string) error {
 		return fmt.Errorf("failed to rename file %s: %w", absSource, err)
 	}
 
-	m.migrated++
+	m.migratedFiles = append(m.migratedFiles, absSource)
 	return nil
 }
 
