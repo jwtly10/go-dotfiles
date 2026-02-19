@@ -7,9 +7,16 @@ import (
 	"path/filepath"
 )
 
+const (
+	// Allow at most 5 'quiet fails' in a Linker run before hard failing the sync
+	MaxConflictCount = 10
+)
+
 type Linker struct {
 	dotfiles *Dotfiles
 	config   *DotfilesConfig
+
+	conflictCount int
 }
 
 func NewLinker(dotfiles *Dotfiles) (*Linker, error) {
@@ -17,7 +24,7 @@ func NewLinker(dotfiles *Dotfiles) (*Linker, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load dotfiles config: %w", err)
 	}
-	return &Linker{dotfiles: dotfiles, config: config}, nil
+	return &Linker{dotfiles: dotfiles, config: config, conflictCount: 0}, nil
 }
 
 // Sync walks files in ~/.dotfiles and creates symlinks in ~
@@ -117,5 +124,11 @@ func (l *Linker) shouldIgnore(relPath string) bool {
 
 func (l *Linker) handleConflict(source, target, reason string) error {
 	// TODO: Let the user decide what to do here
-	return fmt.Errorf("failed to link %s -> %s: %s", target, source, reason)
+	l.conflictCount++
+
+	fmt.Printf("Error: failed to link file %s -> %s: %s\n", target, source, reason)
+	if l.conflictCount > MaxConflictCount {
+		return fmt.Errorf("process failed: too many conflicts, %d reached", MaxConflictCount)
+	}
+	return nil
 }
