@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/bmatcuk/doublestar/v4"
 )
 
 // MaxMigrations is a hard limit on the number of files we will migrate
@@ -218,11 +220,12 @@ func (m *Migrator) shouldIgnore(relPath string) bool {
 func shouldIgnore(ignoreList []string, relPath string) bool {
 	base := filepath.Base(relPath)
 	for _, pattern := range ignoreList {
-		matched, err := filepath.Match(pattern, relPath)
+		matched, err := doublestar.Match(pattern, relPath)
 		if err != nil {
 			panic(fmt.Sprintf("bad pattern found: '%q' : %v", pattern, err))
 		}
 		if matched {
+			fmt.Printf("⏭️ Skipping ignored file (pattern match): %s (matched pattern: %s)\n", relPath, pattern)
 			return true
 		}
 

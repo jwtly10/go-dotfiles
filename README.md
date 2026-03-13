@@ -24,6 +24,7 @@ go-dotfiles init
 ```
 
 This creates the directory and some initial configuration files:
+
 - `dotfiles.yaml`: General settings and global ignore list.
 - `migrate.yaml`: List of files you want to move into your dotfiles.
 - `.gitignore`: Basic ignore rules for your dotfile repository.
@@ -44,6 +45,7 @@ go-dotfiles migrate
 ```
 
 Example `migrate.yaml`:
+
 ```yaml
 paths:
   - .zshrc
@@ -53,9 +55,13 @@ paths:
 
 ignore:
   - .config/.gitconfig
+  - '**/karabiner/automatic_backups/**'
 ```
 
+Note we use doublestar patterns, so you can ignore deeply nested files/directories
+
 This will then create the following dotfiles structure, and move the original files to the dotfiles directory:
+
 ```
 ~/.dotfiles/
 ├── .config
@@ -64,13 +70,14 @@ This will then create the following dotfiles structure, and move the original fi
 │   └── nvim
 │       ├── init.vim
 │       ├── init.lua
-│       ├── ... 
+│       ├── ...
 │       │   └── ... other nested files
 ├── .zshrc
 ```
+
 ### 4. Sync Symlinks
 
-You can now run 
+You can now run
 
 ```bash
 # Preview changes first
@@ -109,10 +116,9 @@ This will generate all the symlinks for the files in your dotfiles directory to 
 
 You can also create a shell alias for git - allowing you to quickly commit changes from any working dir
 
-``` bash
+```bash
 alias dfg="git -C ~/.dotfiles"
 ```
-
 
 ## ⚙️ Configuration
 
@@ -123,10 +129,9 @@ Used to define patterns that should be ignored during sync between the dotfiles 
 ```yaml
 ignore:
   - .DS_Store
-  - "*.log"
-  - ".git"
+  - '*.log'
+  - '.git'
 ```
-
 
 ### `migrate.yaml`
 
@@ -141,5 +146,5 @@ paths:
 
 ignore:
   - .config/.gitconfig
+```
 
-``` 
